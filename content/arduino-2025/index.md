@@ -2,7 +2,7 @@
 
 ##### Julia Kaczmarek, 26th December 2025
 
-[< Back](/)
+[home](/)
 
 For the longest time I have wanted to start working with code in a slightly less abstract way and learn more about how electric circuits work. Not to ramble, but since I started learning programming beyond Python syntax, I was very taken aback by just how much is being abstracted the higher the level of language and architecture. It's very interesting to think about what the code is doing at the voltage level, albeit this is again vastly obscured and abstracted when working with Arduino.
 

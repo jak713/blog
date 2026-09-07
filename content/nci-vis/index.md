@@ -4,7 +4,7 @@
 
 ##### Julia Kaczmarek, 18th February 2026
 
-[< Back](/)
+[home](/)
 
 There are numerous theoretical methods for identifying (and sometimes quantifying) non-covalent interactions (NCIs). Here I will briefly describe QTAIM and NBO, with steps on how to obtain visual results. I will also include a tutorial on obtaining an NCI plot. Scroll around to see examples.
 
