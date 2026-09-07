@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visualising Non-Covalent Interactions</title>
+
+    <link href="/blog/index.css" rel="stylesheet" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.css"
+          integrity="sha384-JctiRyLzXCrSoOOzFlSoWLdyzQl7OrrRnhyeBmzB6ZWtcjccUyc8lCQJqIbs3uQX"
+          crossorigin="anonymous">
+
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/katex.min.js"
+            integrity="sha384-+7Keh381hSkXmXqnjC0JBM/kzsN6TFj+wMKychSLjTvJ8/0ElMde2uKl8i6p6Buj"
+            crossorigin="anonymous"></script>
+
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.18.7/dist/contrib/auto-render.min.js"
+            integrity="sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz"
+            crossorigin="anonymous"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ]
+            });
+        });
+    </script>
+  </head>
+  <body>
+    <article><div><h1>Visualising Non-Covalent Interactions</h1><h2>From start to finish using ORCA6, NBO7, Multiwfn, VMD, and Python scripting in a Jupyter Notebook</h2><h5>Julia Kaczmarek, 18th February 2026</h5><p><a href="/blog/">< Back</a></p><p>There are numerous theoretical methods for identifying (and sometimes quantifying) non-covalent interactions (NCIs). Here I will briefly describe QTAIM and NBO, with steps on how to obtain visual results. I will also include a tutorial on obtaining an NCI plot. Scroll around to see examples.</p><h2>Quantum Theory of Atoms in Molecules (QTAIM)</h2><p>This method analyses the topology of electron density distribution function in a molecule. It can be used to identify critical (that is, stationary) points (CPs) arising from the evaluation of the eigenvalues of the Hessian matrix, which is the matrix of partial second derivatives of the electron density. While certainly qualitatively useful, it has been debated whether the theory's bond paths and BCPs are suited for identifying attractive interactions, as they can arise from unphysical means and mathematical constraints (see <a href="https://link.springer.com/article/10.1007/s00894-018-3684-x">this article</a> for example).</p><p>The number of different types of critical points follows a topological relation (Poincaré-Hopf relationship) for isolated molecules:</p><p><span class="math">$N_{NCP} - N_{BCP} + N_{RCP} - N_{CCP} = 1$</span></p><p>where <span class="math">$N_{NCP}, N_{BCP}, N_{RCP}$</span> and <span class="math">$N_{CCP}$</span> represent the number of nuclear, bond, ring and cage CPs, respectively. The CPs differ by the signs of the eigenvalues of the Hessian matrix (and hence the type of stationary point).</p><ul><li>NCP has all negative curvatures, i.e. is a local maxima of the electron density. It implies the presence of a nucleus, i.e. an atom. Correspond to the beginning and the end of a bond path (3,-3).</li><li>BCP shows two positive curvatures and one negative curvature, corresponding to a saddle point of the electron density. It is the minimum density point along a bond path (3,-1).</li><li>RCP is characterised by two positive curvatures and one negative curvature, corresponding to a different type of saddle point of the electron density (3,+1). This is usually found within a ring structure.</li><li>CCP corresponds to local minima of the electron density and is characterised by all positive curvatures (3,+3). An example of this can be found in the centre of cubane.</li></ul><p>For NCIs, BCPs are of interest. The values of the electron density (<span class="math">$\rho$</span>) and Laplacian (<span class="math">$\nabla^2\rho$</span>) at the BCPs are used to quantify and classify the nature of interactions. BCPs with <span class="math">$\nabla^2\rho < 0$</span> represent a concentration of electron density, indicating a covalent bond. For regions where <span class="math">$\nabla^2\rho > 0$</span>, there is a depletion of electron density, indicating a non-covalent,  or a closed-shell, interaction.</p><h2>Natural Bonding Orbital (NBO) Theory</h2><p>Natural Bond Orbital theory is an established way of interpreting numerical output of quantum chemistry. By obtaining the first-order reduced density matrix from the wavefunction, the NBO analysis can be used to obtain a set of orthogonal orbitals that are located in the atoms and bonds of the molecule. NBO analysis essentially provides an orbital picture of a molecule that best matches its classical Lewis structure. Non-covalent interactions can be analysed in terms of the interactions between filled and empty orbitals. NBOs do not diagonalise the Kohn-Sham operator; hence, we can interpret the off-diagonal elements between bonding orbitals or lone pairs and antibonding orbitals as the interaction between them, obtaining stabilisation energies with second-order perturbation theory. For each donor NBO (i) and acceptor NBO (j), the stabilisation energy (E(2)) associated with delocalisation is estimated as:</p><p><span class="math">$E(2) = \Delta E_{ij} = q_i \frac{F(i,j)^2}{\epsilon_j - \epsilon_i}$</span></p><p>where <span class="math">$q_i$</span> is the donor orbital occupancy, <span class="math">$\epsilon_i$</span> and <span class="math">$\epsilon_j$</span> are diagonal elements (orbital energies) and <span class="math">$F(i,j)$</span> is the off-diagonal NBO Fock matrix element.</p><h2>ORCA: The Great British Wavefunction (.gbw) file</h2><p>ORCA is <i>free for academics</i>. Find out more <a href="https://www.faccts.de/docs/orca/6.0/tutorials/first_steps/install.html">on the ORCA website</a>.</p><p>Though <i>gbw</i> actually stands for <i>Geometry-Basis-Wavefunction</i>, James and Tim have opened my ears to GBW being short for Great British Wavefunction, which is both amusing and, to some (me), wholly believable.</p><p>The gbw file stores a binary summary of the <b>ORCA</b> calculation. Every calculation will produce one, whether successful or not quite – and will be needed for restarting calculations where the SCF cycle failed, for instance. For further use with the <b>multiwfn</b> software, we ideally need a good quality wavefunction, produced from a single point calculation on an optimised structure at a reasonable level of theory (depending on what you're looking at, this could be something like ωB97X-D4/Def2-TZVP).</p><p>Example input:</p><pre><code>! wB97X-D4 # Functional
+! def2-TZVP # Basis set
+
+%maxcore 1000 # 1GB RAM memory per core
+%pal nprocs 8 end # If you have an 8-core CPU
+
+*xyzfile 0 1 singlet_neutral_structure.xyz
+</code></pre><p>In its native form, the gbw file cannot be used as an input to <b>multiwfn</b> and has to be changed. <b>ORCA</b> provides functionality for this:</p><p><code>orca_2mkl <gbw-file-without-.gbw-suffix> -molden</code></p><p>The above will produce a <i>molden.input</i> file that can be used for <b>multiwfn</b>, though you might want to shorten it to just <i>.molden</i>:</p><p><code>mv <file-name>.molden.input <file-name>.molden</code></p><p>We can then move on to the QTAIM tutorial.</p><h2>Tutorial QTAIM (ORCA+Multiwfn+qtaim.py)</h2><p>Step by step assuming a Linux/MacOS machine (Windows user try this at your own risk):</p><ol><li><b>Multiwfn software is free and open source</b>. Find out more <a href="http://sobereva.com/multiwfn/">on the multiwfn website</a>.</li><li>Follow the above section to obtain a <code>gbwfile.molden</code> input for Multiwfn.</li><li>Run using <code>multiwfn gwbfile.molden</code>.</li><li>Input 2 for: <code>2 Topology analysis</code>.</li><li><code>2 Search CPs from nuclear positions</code>.</li><li><code>3 Search CPs from midpoint of atomic pairs</code>.</li><li><code>4 Search CPs from triangle center of three atoms</code>.</li><li><code>5 Search CPs from pyramid center of four atoms</code>.</li><li><code>8 Generating the paths connecting (3,-3) and (3,-1) CPs</code> (We could also include option <code>9</code> but we are mostly interested only in the connections between the nuclei and BCPs).</li><li> <code>0 Print and visualize all generated CPs, paths and interbasin surfaces</code> Here make sure all CPs have been found - this will be apparent by the message  <code>Fine, Poincare-Hopf relationship is satisfied, all CPs may have been found</code>.</li><li> <code>7 Show real space function values at specific CP or all CPs</code>.</li><li> Input 0 for <code>0 (Note 1: If input 0, then properties of all CPs will be outputted to CPprop.txt in current folder (and if you feel the output speed is slow, you can input -1 to avoid outputting ESP, which is the most expensive one))</code>. This may take some time depending on how many CPs were found. The <code>CPprop.txt</code> file and the <code>.xyz</code> file used in the ORCA calculation is what we will use for visualising the connections in a Jupyter notebook. The required Python script can be found <a href="https://github.com/jak713/qtaim_vis">here</a>. If you are unfamiliar with Jupyter notebooks, you can have a look at how to install the web interface <a href="https://docs.jupyter.org/en/latest/install/notebook-classic.html">here</a>.</li><li> The <code>qtaim.py</code> can be copied and pasted into a code cell in the notebook and ran. It may be missing some dependencies – run <code>pip install py3dmol matplotlib</code> to fix that.</li><li> Make sure both <code>CPprop.txt</code> and <code><structure>.xyz</code> files are in the working directory.</li><li> The are a few options for the <code>visualise</code> function. The full list can be found <a href="https://github.com/jak713/qtaim_vis/blob/main/visualise_params.md">here</a>. You may use the following template for visualising the CPs:</li></ol><pre><code>qtaim = QTAIM('CPprop.txt')
+
+# Visualize using an XYZ file (same as the one used for wavefunction for multiwfn) for atomic coordinates
+qtaim.visualise("<structure>.xyz",
+                xyz_outline=True, # shows xyz file as stick model (useful)
+                covalent=False, # if False hides (3,-3)-type CPs (nuclear)and non-positive BCPs
+                show_rho=False,
+                show_pos_lap=True, # generally what one might want for non-covalent interactions (positive Laplacian)
+                hide_ring_cage=False, # if False hides BCPs of type (3,+3) and (3,+1)
+                show_atom_labels = False, # atom type and number
+                show_only_same=False, # same connecting atoms like 1C2C C -- C
+                show_only_different=False, # different connecting atoms like 201N59H for N -- H
+                show_bond_lengths=False,
+                print_parameters=True, # print a table with all you want to know for only the displayed (as per these options) BCPs
+                legend=True, # prints out a legend for the plot
+                connect_atoms_A_B=True, # when wanting to study particular interactions e.g. O and H for hydrogen bonding
+                A="O",
+                B="H")
+</code></pre><p>This should return something similar to this: <img src="/blog/images/qtaim_vis.png" alt="qtaim_vis_example"></img></p><h2>Tutorial NBO (ORCA+NBO+nbo.py)</h2><pre><code>! wB97X-D4 def2-tZVP 
+! nbo 
+
+%nbo
+NBOKeyList = "$NBO MEMORY = 4gb $END"
+end
+
+%maxcore 1000
+%pal nprocs 8 end
+
+*xyzfile 0 1 singlet_neutral_structure.xyz
+</code></pre><ol><li><b>NBO7</b> is not free and a license can be costly. Find out more <a href="https://nbo6.chem.wisc.edu/">on the NBO website</a>. Orca has an NBO interface - above is an example input file that utilises this. I found that the calculation can fail due to insufficient memory, hence the inclusion of the <code>%nbo</code> input block.</li><li>Obtain an output file from the <b>ORCA</b> calculation and place it in a directory along with the <code><structure>.xyz</code> file. Start up the Jupyter notebook and acquire <a href="https://github.com/jak713/nbo_vis/blob/main/nbo.py">this script</a>. Either paste it in a cell and run or download it and place it either in the working directory or in your <code>bin/</code> directory.</li><li>Use the below template, adjusting the filenames and whatever else necessary:</li></ol><pre><code>test = NBO_SOP("nbo.out")
+
+test.visualise_nbo_data("inp.xyz",
+                        donor_type="LP", # Lone pair. Electron rich. Can also be BD (bonding orbital). 
+                        donor="N", # Example donor 
+                        acceptor_type="BD*", # Antibonding orbital - electron poor, hence can accept electron density.
+                        acceptor="H", # Example acceptor 
+                        E2_below=None, # Can change to a float as required
+                        E2_above=None,  # Can change to a float as required
+                        label=True, 
+                        print_latex=False, 
+                        proportional_radius=True # Make the cylinder radius of the interactions proportional to their relative strength
+                        )
+</code></pre><p>The rendered py3Dmol output should look similar to this:</p><p><img src="/blog/images/nbo_vis.png" alt="NBO_vis_example"></img></p><h2>Combining NBO and QTAIM (combine<i>qtaim</i>nbo.py)</h2><p>In the event that one would like to overlay both QTAIM and NBO results to see at a glance whether they agree with each other, <a href="https://github.com/jak713/nbo_vis/blob/main/combine_qtaim_nbo.py">this script</a> can achieve this.</p><p>Ideally, the QTAIM and NBO analyses will be done in the same Jupyter notebook, then the appropriate extra function can be imported and used directly without having to set everything else up:</p><pre><code>from combine_qtaim_nbo import combine_qtaim_and_nbo_data
+
+combine_qtaim_and_nbo_data(qtaim=qtaim, 
+                            nbo=nbo, 
+                            xyz_file="inp.xyz", 
+                            donor="N", 
+                            acceptor="H", 
+                            label_qtaim=False, 
+                            label_nbo=False, 
+                            legend=False,
+                            E2_above=0.1, 
+                            E2_below=0.45,
+                            donor_type="LP",
+                            )
+
+</code></pre><p>This will yield something that looks similar to this:</p><p><img src="/blog/images/combine_qtaim_nbo.png" alt="NBO_and_QTAIM_example"></img></p><h2>Tutorial NCI Plotting (Multiwfn+VMD+Gnuplot)</h2><p>Step by step assuming a Linux/MacOS machine (Windows user try this at your own risk (though it should mostly work)):</p><ol><li><b>Multiwfn software is free and open source</b>. Find out more <a href="http://sobereva.com/multiwfn/">here</a>.</li><li>Follow the above section to obtain a <code>gbwfile.molden</code> input for Multiwfn.</li><li>Run using <code>multiwfn gwbfile.molden</code></li><li>Input 20 for: <code>20 Visual study of weak interaction</code></li><li>Input 1 for: <code>1 NCI analysis (also known as RDG analysis)</code></li><li>Depending on the size of your structure, you will want to select an appropriate grid. The higher the quality, the longer it will take, but also the lower the quality the more *choppy* it will be. If your structure is rather large, the <code>3 high quality grid</code> might not cut it and you will have to select option <code>4 Input the number of points or grid spacing in X,Y,Z, covering whole system</code> and input appropriate spacing, <code>0.2</code> or <code>0.1</code>, for example.</li><li>Once this is complete, input 2 for <code>2 Output scatter points to output.txt in current folder</code>. This will be used for the scatterplot.</li><li>Importantly, obtain the <code>cube</code> files by inputting 3 for <code>3 Output cube files to func1.cub and func2.cub in current folder</code>. This is for the NCI plot.</li><li>Plotting the results is thankfully largely automated, we want to use <b>VMD</b>, which is *free* and can be found <a href="https://www.ks.uiuc.edu/Research/vmd/">here</a>. We will also need the <code>RDGfill.vmd</code> script contained within the Multiwfn examples directory, and also found <a href="https://github.com/stecue/gMultiwfn/blob/master/examples/RDGfill.vmd">here</a> or an alternative version <a href="https://github.com/i4hashmi/Multiwfn_3.8_dev_bin_Win64_Jul24/blob/master/examples/RDGfill2.vmd">here</a>. Place both <code>.cub</code> files and the <code>RDGfill.vmd</code> and ideally start up VMD from the terminal in that directory.</li><li> Go to: File -> Load Visualization State... -> Select RDGfill.vmd and press okay. Your NCI plot should manifest, it should look like the picture below.</li><li> For the scatterplot we use <b>Gnuplot</b>. This is free and open source and can be found <a href="http://www.gnuplot.info/">here</a>. On Mac, you can obtain it via <a href="https://formulae.brew.sh/formula/gnuplot">brew</a>.</li><li> For RDGscatter.gnu, find it <a href="https://github.com/i4hashmi/Multiwfn_3.8_dev_bin_Win64_Jul24/blob/master/examples/scripts/RDGscatter.gnu">here</a>. Place it in a directory with the <code>output.txt</code> file from Step 6.</li><li> Run <code>gnuplot RDGscatter.gnu</code> - this will create a postscript file that can be edited with an EPS viewer. I personally use <a href="https://skim-app.sourceforge.io/">skim</a>.</li><li> Convert the .ps file into pdf or png with the EPS viewer and you're good to go. The resulting output should look like the bottom picture:</li></ol><p><img src="/blog/images/nci_plot.png" alt="NCI_plot_example"></img></p><p><img src="/blog/images/RDGscatter.png" alt="RDG_scatter_example"></img></p><p>If you encounter any issues with any of the Python scripts in this tutorial, please let me know by raising an issue on GitHub.</p><p>Hopefully this was useful. Good luck!</p></div></article>
+  </body>
+
+<footer>In the making with love, a dream, the <a href="https://github.com/tokyo-night/tokyo-night-vscode-theme">Tokyo Night theme</a> and the <a href="https://www.boot.dev/courses/build-static-site-generator-python">static site generator from boot.dev</a> by Julia Kaczmarek © 2025-2026</footer>
+
+</html>
