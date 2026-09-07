@@ -193,7 +193,7 @@ a:hover {
    Back link
    ------------------------- */
 
-a[href="/"] {
+a[href="/blog/"] {
     display: inline-block;
 
     color: var(--tn-gray-blue);
@@ -201,7 +201,7 @@ a[href="/"] {
     margin-bottom: 2em;
 }
 
-a[href="/"]::before {
+a[href="/blog/"]::before {
     content: "$ ";
     color: var(--tn-green);
 }
