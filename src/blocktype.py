@@ -12,7 +12,7 @@ class BlockType(Enum):
 def block_to_block_type(block: str) -> BlockType:
     if block.startswith('```') and block.endswith('```'):
         return BlockType.CODE
-    if '# ' in block[:7]:
+    if '# ' in block[:7] and "#" in block[0]:
         return BlockType.HEADING
     if block[0] == '>':
         return BlockType.QUOTE
